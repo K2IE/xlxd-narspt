@@ -76,7 +76,7 @@ else {
 }
 
 
-?><!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN"
+?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -94,32 +94,32 @@ else {
 
    if ($PageOptions['PageRefreshActive']) {
       echo '
+   <script src="./js/jquery-1.12.4.min.js"></script>
    <script>
       var PageRefresh;
       
-      function ReloadPage() {';
-     if (($_SERVER['REQUEST_METHOD'] === 'POST') || isset($_GET['do'])) {
-       echo '
-         document.location.href = "./index.php';
-       if (isset($_GET['show'])) {
-         echo '?show='.$_GET['show'];
-       }
-       echo '";';
-     } else {
-       echo '
-         document.location.reload();';
-     }
-     echo '
+      function ReloadPage() {
+         $.get("./index.php'.(isset($_GET['show'])?'?show='.$_GET['show']:'').'", function(data) {
+            var BodyStart = data.indexOf("<bo"+"dy");
+            var BodyEnd = data.indexOf("</bo"+"dy>");
+            if ((BodyStart >= 0) && (BodyEnd > BodyStart)) {
+               BodyStart = data.indexOf(">", BodyStart)+1;
+               $("body").html(data.substring(BodyStart, BodyEnd));
+            }
+         })
+            .always(function() {
+               PageRefresh = setTimeout(ReloadPage, '.$PageOptions['PageRefreshDelay'].');
+            });
       }';
 
      if (!isset($_GET['show']) || (($_GET['show'] != 'liveircddb') && ($_GET['show'] != 'reflectors') && ($_GET['show'] != 'interlinks'))) {
          echo '
-     PageRefresh = setTimeout(ReloadPage, '.$PageOptions['PageRefreshDelay'].');';
+      PageRefresh = setTimeout(ReloadPage, '.$PageOptions['PageRefreshDelay'].');';
      }
      echo '
 
       function SuspendPageRefresh() {
-        clearTimeout(PageRefresh);
+         clearTimeout(PageRefresh);
       }
    </script>';
    }
@@ -130,7 +130,7 @@ else {
 <body>
    <?php if (file_exists("./tracking.php")) { include_once("tracking.php"); }?>
    <div id="top"><img src="./img/header.jpg" alt="XLX Multiprotocol Gateway Reflector" style="margin-top:15px;" />
-      <br />&nbsp;&nbsp;&nbsp;<?php echo $Reflector->GetReflectorName(); ?>&nbsp;v<?php echo $Reflector->GetVersion(); ?>&nbsp;-&nbsp;Dashboard v<?php echo $PageOptions['DashboardVersion']; ?>&nbsp;&nbsp;/&nbsp;&nbsp;Service uptime: <span id="suptime"><?php echo FormatSeconds($Reflector->GetServiceUptime()); ?></span></div>
+      <br />&nbsp;&nbsp;&nbsp;<?php echo $Reflector->GetReflectorName(); ?>&nbsp;v<?php echo $Reflector->GetVersion(); ?>&nbsp;-&nbsp;Dashboard v<?php echo $PageOptions['DashboardVersion']; ?>&nbsp;<?php echo $PageOptions['CustomTXT']; ?>&nbsp;&nbsp;/&nbsp;&nbsp;Service uptime: <span id="suptime"><?php echo FormatSeconds($Reflector->GetServiceUptime()); ?></span></div>
    <div id="menubar">
       <div id="menu">
          <table border="0">
@@ -138,8 +138,8 @@ else {
                <td><a href="./index.php" class="menulink<?php if ($_GET['show'] == '') { echo 'active'; } ?>">Users / Modules</a></td>
                <td><a href="./index.php?show=repeaters" class="menulink<?php if ($_GET['show'] == 'repeaters') { echo 'active'; } ?>">Repeaters / Nodes (<?php echo $Reflector->NodeCount(); ?>)</a></td>
                <td><a href="./index.php?show=peers" class="menulink<?php if ($_GET['show'] == 'peers') { echo 'active'; } ?>">Peers (<?php echo $Reflector->PeerCount(); ?>)</a></td>
-               <td><a href="./index.php?show=reflectors" class="menulink<?php if ($_GET['show'] == 'reflectors') { echo 'active'; } ?>">Reflectorlist</a></td>
-               <td><a href="./index.php?show=liveircddb" class="menulink<?php if ($_GET['show'] == 'liveircddb') { echo 'active'; } ?>">D-Star live</a></td>
+               <td><a href="./index.php?show=modules" class="menulink<?php if ($_GET['show'] == 'modules') { echo 'active'; } ?>">Modules list</a></td>
+               <td><a href="./index.php?show=reflectors" class="menulink<?php if ($_GET['show'] == 'reflectors') { echo 'active'; } ?>">Reflectors list</a></td>
                <?php
                
                if ($PageOptions['Traffic']['Show']) {
@@ -148,6 +148,12 @@ else {
                    if ($_GET['show'] == 'traffic') { echo 'active'; }
                    echo '">Traffic statistics</a></td>';
                }
+		     if ($PageOptions['IRCDDB']['Show']) {
+                   echo '
+               <td><a href="./index.php?show=liveircddb" class="menulink';
+                   if ($_GET['show'] == 'liveircddb') { echo 'active'; }
+                   echo '">D-Star live</a></td>';
+              }
                
                ?>
             </tr>
@@ -171,6 +177,7 @@ else {
       case 'repeaters'  : require_once("./pgs/repeaters.php"); break;
       case 'liveircddb' : require_once("./pgs/liveircddb.php"); break;
       case 'peers'      : require_once("./pgs/peers.php"); break;
+      case 'modules'    : require_once("./pgs/modules.php"); break;
       case 'reflectors' : require_once("./pgs/reflectors.php"); break;
       case 'traffic'		: require_once("./pgs/traffic.php"); break;
       default           : require_once("./pgs/users.php");
