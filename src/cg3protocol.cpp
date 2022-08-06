@@ -827,7 +827,8 @@ void CG3Protocol::ReadOptions(void)
                     {
                         if (::strncmp(szt, "address", 7) == 0)
                         {
-                            in_addr addr = { .s_addr = inet_addr(szval) };
+                            in_addr addr;
+                            addr.s_addr = inet_addr(szval);
                             if (addr.s_addr)
                             {
                                 std::cout << "G3 handler address set to " << inet_ntoa(addr) << std::endl;
