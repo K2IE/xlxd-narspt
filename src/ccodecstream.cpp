@@ -237,6 +237,12 @@ void CCodecStream::Task(void)
     {
         //std::cout << "ambed packet timeout" << std::endl;
         m_uiTimeoutPackets++;
+        // push ambed timedout packets as-is (bypass transcoding) back to client
+        CDvFramePacket *Packet = (CDvFramePacket *)m_LocalQueue.front();
+        m_LocalQueue.pop();
+        m_PacketStream->Lock();
+        m_PacketStream->push(Packet);
+        m_PacketStream->Unlock();
     }
 }
 
