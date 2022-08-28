@@ -281,10 +281,10 @@ void CTranscoder::ReleaseStream(CCodecStream *stream)
                     m_Socket.Send(Buffer, m_Ip, TRANSCODER_PORT);
                     
                     // display stats
-                    //if ( m_Streams[i]->GetPingMin() >= 0.0 )
+                    if ( m_Streams[i]->GetPingMin() >= 0.0 )
                     {
                         char sz[256];
-                        sprintf(sz, "ambed stats (ms) : %.1f/%.1f/%.1f",
+                        sprintf(sz, "ambed stats (min/avg/max) : %.1f/%.1f/%.1f ms",
                                 m_Streams[i]->GetPingMin() * 1000.0,
                                 m_Streams[i]->GetPingAve() * 1000.0,
                                 m_Streams[i]->GetPingMax() * 1000.0);

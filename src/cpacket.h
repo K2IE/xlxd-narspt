@@ -25,6 +25,8 @@
 #ifndef cpacket_h
 #define cpacket_h
 
+#include "ctimepoint.h"
+
 ////////////////////////////////////////////////////////////////////////////////////////
 
 // Origin Id
@@ -80,6 +82,10 @@ public:
     void SetLocalOrigin(void)                       { m_uiOriginId = ORIGIN_LOCAL; }
     void SetRemotePeerOrigin(void)                  { m_uiOriginId = ORIGIN_PEER; }
     
+    // timestamp
+    void   TimestampNow(void)                       { m_Timestamp.Now(); }
+    double TimestampDuration(void)                  { return m_Timestamp.DurationSinceNow(); }
+    
 protected:
     // common
     uint16  m_uiStreamId;
@@ -98,6 +104,8 @@ protected:
     uint8   m_uiImrsPacketId;
     uint16  m_uiImrsPacketFrameId;
     uint8   m_uiImrsPacketSubId;
+    // timestamp
+    CTimePoint m_Timestamp;
 };
 
 

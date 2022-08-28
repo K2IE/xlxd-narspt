@@ -99,8 +99,6 @@ protected:
     // thread
     bool            m_bStopThread;
     std::thread     *m_pThread;
-    CTimePoint      m_TimeoutTimer;
-    CTimePoint      m_StatsTimer;
     
     // statistics
     double          m_fPingMin;

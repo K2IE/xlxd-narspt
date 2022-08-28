@@ -102,9 +102,6 @@ bool CCodecStream::Init(uint16 uiPort)
     ok = m_Socket.Open(uiPort);
     if ( ok )
     {
-        // init timers
-        m_TimeoutTimer.Now();
-        
         // start  thread;
         m_pThread = new std::thread(CCodecStream::Thread, this);
         m_bConnected = true;
@@ -167,32 +164,28 @@ void CCodecStream::Task(void)
         // crack
         if ( IsValidAmbePacket(Buffer, Ambe) )
         {
-            // tickle
-            m_TimeoutTimer.Now();
-            
-            // update statistics
-            double ping = m_StatsTimer.DurationSinceNow();
-            if ( m_fPingMin == -1 )
-            {
-                m_fPingMin = ping;
-                m_fPingMax = ping;
-                
-            }
-            else
-            {
-                m_fPingMin = MIN(m_fPingMin, ping);
-                m_fPingMax = MAX(m_fPingMax, ping);
-                
-            }
-            m_fPingSum += ping;
-            m_fPingCount += 1;
-            
             // pop the original packet
             if ( !m_LocalQueue.empty() )
             {
                 CDvFramePacket *Packet = (CDvFramePacket *)m_LocalQueue.front();
                 m_LocalQueue.pop();
                 // todo: check the PID
+                
+                // update statistics
+                double ping = Packet->TimestampDuration();
+                if ( m_fPingMin == -1 )
+                {
+                    m_fPingMin = ping;
+                    m_fPingMax = ping;
+                }
+                else
+                {
+                    m_fPingMin = MIN(m_fPingMin, ping);
+                    m_fPingMax = MAX(m_fPingMax, ping);
+                }
+                m_fPingSum += ping;
+                m_fPingCount += 1;
+                
                 // update content with transcoded ambe
                 Packet->SetAmbe(m_uiCodecOut, Ambe);
                 // tag syncs in DvData
@@ -223,7 +216,7 @@ void CCodecStream::Task(void)
         // this assume that thread pushing the Packet
         // have verified that the CodecStream is connected
         // and that the packet needs transcoding
-        m_StatsTimer.Now();
+        Packet->TimestampNow();
         m_uiTotalPackets++;
         EncodeAmbePacket(&Buffer, ((CDvFramePacket *)Packet)->GetAmbe(m_uiCodecIn));
         m_Socket.Send(Buffer, m_Ip, m_uiPort);
@@ -233,16 +226,23 @@ void CCodecStream::Task(void)
     }
     
     // handle timeout
-    if ( !m_LocalQueue.empty() && (m_TimeoutTimer.DurationSinceNow() >= (TRANSCODER_AMBEPACKET_TIMEOUT/1000.0f)) )
+    if ( !m_LocalQueue.empty() )
     {
-        //std::cout << "ambed packet timeout" << std::endl;
-        m_uiTimeoutPackets++;
-        // push ambed timedout packets as-is (bypass transcoding) back to client
         CDvFramePacket *Packet = (CDvFramePacket *)m_LocalQueue.front();
-        m_LocalQueue.pop();
-        m_PacketStream->Lock();
-        m_PacketStream->push(Packet);
-        m_PacketStream->Unlock();
+        if ( Packet->TimestampDuration() >= (TRANSCODER_AMBEPACKET_TIMEOUT/1000.0f) )
+        {
+            //std::cout << "ambed packet timeout" << std::endl;
+            m_uiTimeoutPackets++;
+            // push ambed timedout packets as-is (bypass transcoding) back to client
+            m_LocalQueue.pop();
+            if ( (m_uiCodecOut == CODEC_AMBEPLUS) && (Packet->GetPacketId() % 21) == 0 )
+            {
+                Packet->SetDvData(DStarSync);
+            }
+            m_PacketStream->Lock();
+            m_PacketStream->push(Packet);
+            m_PacketStream->Unlock();
+        }
     }
 }
 
