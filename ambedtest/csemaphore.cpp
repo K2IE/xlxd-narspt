@@ -65,12 +65,13 @@ bool CSemaphore::WaitFor(uint ms)
     std::chrono::milliseconds timespan(ms);
     std::unique_lock<decltype(m_Mutex)> lock(m_Mutex);
 //    auto ok = m_Condition.wait_for(lock, timespan, [&]{ return m_Count > 0; });
+    bool ok = true;
     while (m_Count <= 0) {
-        if (m_Condition.wait_for(lock, timespan) == 0) {
-            break; // timeout
+        if (m_Condition.wait_for(lock, timespan) == 0) { // timeout
+            ok = (m_Count > 0);
+            break;
         }
     }
-    auto ok = (m_Count > 0);
     if ( ok )
     {
         m_Count--;
