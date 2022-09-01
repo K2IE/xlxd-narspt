@@ -87,7 +87,20 @@ bool CVocodecs::Init(void)
     DiscoverFtdiDevices();
 
     // and create interfaces for the discovered devices
-    // first handle all even number of channels devices
+    // first handle all BaoFarm devices
+    std::vector<CVocodecChannel *>  MultiBAOFarmDevicesChs;
+    for ( int i = 0; i < m_FtdiDeviceDescrs.size(); i++ )
+    {
+        CFtdiDeviceDescr *descr = m_FtdiDeviceDescrs[i];
+        if ( !descr->IsUsed() && (descr->GetNbChannels() == 4) )
+        {
+            // create the object
+            iNbCh += CFtdiDeviceDescr::CreateInterface(descr, &MultiBAOFarmDevicesChs);
+            // and flag as used
+            descr->SetUsed(true);
+        }
+    }
+    // next handle all even number of channels devices
     std::vector<CVocodecChannel *>  Multi3003DevicesChs;
     for ( int i = 0; i < m_FtdiDeviceDescrs.size(); i++ )
     {
@@ -215,6 +228,18 @@ bool CVocodecs::Init(void)
             m_Channels.push_back(Single3003DeviceChannels.at(i));
         }
         Single3003DeviceChannels.clear();
+    }
+    // next BaoFarm devices
+    {
+        int n = (int)MultiBAOFarmDevicesChs.size() / 4;
+        for ( int i = 0; (i < 4) && (n != 0); i++ )
+        {
+            for ( int j = 0; j < n; j++ )
+            {
+                m_Channels.push_back(MultiBAOFarmDevicesChs.at((j*4) + i));
+            }
+        }
+        MultiBAOFarmDevicesChs.clear();
     }
     // finally interlace multi-3003 and pairs of 3003 devices which always
     // results to 6 channels per pair of 3003
