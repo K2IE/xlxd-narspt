@@ -25,6 +25,7 @@
 #include "main.h"
 #include <string.h>
 #include "cusb3000interface.h"
+#include "cusb3000emuinterface.h"
 #include "cusb3003interface.h"
 #include "cusb3003hrinterface.h"
 #include "cusb3003df2etinterface.h"
@@ -70,7 +71,14 @@ int CFtdiDeviceDescr::CreateInterface(CFtdiDeviceDescr *descr, std::vector<CVoco
 {
     int iNbChs = 0;
     
-    // single channel devices cannot be created alone
+    // single channel devices
+    if ( (::strcmp(descr->GetDescription(), "USB-3000")  == 0) ||           // DVSI's USB-3000
+         (::strcmp(descr->GetDescription(), "DVstick-30")== 0) ||           // DVMEGA AMBE3000 device
+         (::strcmp(descr->GetDescription(), "ThumbDV")   == 0) ||           // ThumbDV
+         (::strcmp(descr->GetDescription(), "BAO3000")   == 0) )            // Team6160 AMBE3000
+    {
+        iNbChs = CreateUsb3000(descr, channels);
+    }
     // three channels devices
     if ( (::strcmp(descr->GetDescription(), "USB-3003")    == 0) ||     // DVSI's  USB-3003
          (::strcmp(descr->GetDescription(), "DF2ET-3003")  == 0) ||     // DF2ET's USB-3003 opensource device
@@ -228,67 +236,156 @@ int CFtdiDeviceDescr::CreateUsb3012(CFtdiDeviceDescr *descr, std::vector<CVocode
     CUsb3003HRInterface *Usb3003D =
         new CUsb3003HRInterface(descr->GetVid(), descr->GetPid(), descr->GetChannelDescription(3), descr->GetChannelSerialNumber(3));
     
+    CUsb3000emuInterface *Usb3000emuA0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuA1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuA2 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB2 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuC0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuC1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuC2 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuD0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuD1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuD2 = InstantiateUsb3000emu();
+    
     // init the interfaces
-    if ( Usb3003A->Init(CODEC_AMBEPLUS) && Usb3003B->Init(CODEC_AMBE2PLUS) &&
-         Usb3003C->Init(CODEC_AMBEPLUS) && Usb3003D->Init(CODEC_AMBE2PLUS) )
+    if ( Usb3003A->Init(CODEC_AMBEPLUS) && Usb3003B->Init(CODEC_AMBEPLUS) &&
+         Usb3003C->Init(CODEC_AMBEPLUS) && Usb3003D->Init(CODEC_AMBEPLUS) &&
+         Usb3000emuA0->Init(CODEC_AMBE2PLUS) && Usb3000emuA1->Init(CODEC_AMBE2PLUS) && Usb3000emuA2->Init(CODEC_AMBE2PLUS) &&
+         Usb3000emuB0->Init(CODEC_AMBE2PLUS) && Usb3000emuB1->Init(CODEC_AMBE2PLUS) && Usb3000emuB2->Init(CODEC_AMBE2PLUS) &&
+         Usb3000emuC0->Init(CODEC_AMBE2PLUS) && Usb3000emuC1->Init(CODEC_AMBE2PLUS) && Usb3000emuC2->Init(CODEC_AMBE2PLUS) &&
+         Usb3000emuD0->Init(CODEC_AMBE2PLUS) && Usb3000emuD1->Init(CODEC_AMBE2PLUS) && Usb3000emuD2->Init(CODEC_AMBE2PLUS) )
     {
         CVocodecChannel *Channel;
         // create all channels
         {
             // ch1
-            Channel = new CVocodecChannel(Usb3003A, 0, Usb3003A, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003A, 0, Usb3000emuA0, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
+            Usb3000emuA0->AddChannel(Channel);
             // ch2
-            Channel = new CVocodecChannel(Usb3003A, 1, Usb3003A, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA0, 0, Usb3003A, 0, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
+            Usb3000emuA0->AddChannel(Channel);
             // ch3
-            Channel = new CVocodecChannel(Usb3003B, 0, Usb3003B, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003A, 1, Usb3000emuA1, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3003A->AddChannel(Channel);
+            Usb3000emuA1->AddChannel(Channel);
             // ch4
-            Channel = new CVocodecChannel(Usb3003B, 1, Usb3003B, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA1, 0, Usb3003A, 1, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3003A->AddChannel(Channel);
+            Usb3000emuA1->AddChannel(Channel);
             // ch5
-            Channel = new CVocodecChannel(Usb3003A, 2, Usb3003B, 2, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003A, 2, Usb3000emuA2, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3000emuA2->AddChannel(Channel);
             // ch6
-            Channel = new CVocodecChannel(Usb3003B, 2, Usb3003A, 2, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA2, 0, Usb3003A, 2, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3000emuA2->AddChannel(Channel);
+
             // ch7
-            Channel = new CVocodecChannel(Usb3003C, 0, Usb3003C, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003B, 0, Usb3000emuB0, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
-            Usb3003C->AddChannel(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB0->AddChannel(Channel);
             // ch8
-            Channel = new CVocodecChannel(Usb3003C, 1, Usb3003C, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuB0, 0, Usb3003B, 0, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
-            Usb3003C->AddChannel(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB0->AddChannel(Channel);
             // ch9
-            Channel = new CVocodecChannel(Usb3003D, 0, Usb3003D, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003B, 1, Usb3000emuB1, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
-            Usb3003D->AddChannel(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB1->AddChannel(Channel);
             // ch10
-            Channel = new CVocodecChannel(Usb3003D, 1, Usb3003D, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuB1, 0, Usb3003B, 1, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
-            Usb3003D->AddChannel(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB1->AddChannel(Channel);
             // ch11
-            Channel = new CVocodecChannel(Usb3003C, 2, Usb3003D, 2, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003B, 2, Usb3000emuB2, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
-            Usb3003C->AddChannel(Channel);
-            Usb3003D->AddChannel(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB2->AddChannel(Channel);
             // ch12
-            Channel = new CVocodecChannel(Usb3003D, 2, Usb3003C, 2, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuB2, 0, Usb3003B, 2, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB2->AddChannel(Channel);
+
+            // ch13
+            Channel = new CVocodecChannel(Usb3003C, 0, Usb3000emuC0, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             Usb3003C->AddChannel(Channel);
+            Usb3000emuC0->AddChannel(Channel);
+            // ch14
+            Channel = new CVocodecChannel(Usb3000emuC0, 0, Usb3003C, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003C->AddChannel(Channel);
+            Usb3000emuC0->AddChannel(Channel);
+            // ch15
+            Channel = new CVocodecChannel(Usb3003C, 1, Usb3000emuC1, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003C->AddChannel(Channel);
+            Usb3000emuC1->AddChannel(Channel);
+            // ch16
+            Channel = new CVocodecChannel(Usb3000emuC1, 0, Usb3003C, 1, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003C->AddChannel(Channel);
+            Usb3000emuC1->AddChannel(Channel);
+            // ch17
+            Channel = new CVocodecChannel(Usb3003C, 2, Usb3000emuC2, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003C->AddChannel(Channel);
+            Usb3000emuC2->AddChannel(Channel);
+            // ch18
+            Channel = new CVocodecChannel(Usb3000emuC2, 0, Usb3003C, 2, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003C->AddChannel(Channel);
+            Usb3000emuC2->AddChannel(Channel);
+
+            // ch19
+            Channel = new CVocodecChannel(Usb3003D, 0, Usb3000emuD0, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
             Usb3003D->AddChannel(Channel);
+            Usb3000emuD0->AddChannel(Channel);
+            // ch20
+            Channel = new CVocodecChannel(Usb3000emuD0, 0, Usb3003D, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003D->AddChannel(Channel);
+            Usb3000emuD0->AddChannel(Channel);
+            // ch21
+            Channel = new CVocodecChannel(Usb3003D, 1, Usb3000emuD1, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003D->AddChannel(Channel);
+            Usb3000emuD1->AddChannel(Channel);
+            // ch22
+            Channel = new CVocodecChannel(Usb3000emuD1, 0, Usb3003D, 1, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003D->AddChannel(Channel);
+            Usb3000emuD1->AddChannel(Channel);
+            // ch23
+            Channel = new CVocodecChannel(Usb3003D, 2, Usb3000emuD2, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003D->AddChannel(Channel);
+            Usb3000emuD2->AddChannel(Channel);
+            // ch24
+            Channel = new CVocodecChannel(Usb3000emuD2, 0, Usb3003D, 2, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003D->AddChannel(Channel);
+            Usb3000emuD2->AddChannel(Channel);
+
             //done
-            nStreams = 12;
+            nStreams = 24;
         }
     }
     else
@@ -298,6 +395,18 @@ int CFtdiDeviceDescr::CreateUsb3012(CFtdiDeviceDescr *descr, std::vector<CVocode
         delete Usb3003B;
         delete Usb3003C;
         delete Usb3003D;
+        delete Usb3000emuA0;
+        delete Usb3000emuA1;
+        delete Usb3000emuA2;
+        delete Usb3000emuB0;
+        delete Usb3000emuB1;
+        delete Usb3000emuB2;
+        delete Usb3000emuC0;
+        delete Usb3000emuC1;
+        delete Usb3000emuC2;
+        delete Usb3000emuD0;
+        delete Usb3000emuD1;
+        delete Usb3000emuD2;
     }
     
     // done
@@ -324,34 +433,60 @@ int CFtdiDeviceDescr::CreateBaoFarm(CFtdiDeviceDescr *descr, std::vector<CVocode
     CUsb3000BaoFarmInterface *UsbBaoFarmD =
         new CUsb3000BaoFarmInterface(descr->GetVid(), descr->GetPid(), descr->GetChannelDescription(3), descr->GetChannelSerialNumber(3));
 
+    CUsb3000emuInterface *Usb3000emuA = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuC = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuD = InstantiateUsb3000emu();
+
     // init the interfaces
-    if ( UsbBaoFarmA->Init(CODEC_AMBEPLUS) && UsbBaoFarmB->Init(CODEC_AMBE2PLUS) && UsbBaoFarmC->Init(CODEC_AMBEPLUS) && UsbBaoFarmD->Init(CODEC_AMBE2PLUS) )
+    if ( UsbBaoFarmA->Init(CODEC_AMBEPLUS) && UsbBaoFarmB->Init(CODEC_AMBEPLUS) && UsbBaoFarmC->Init(CODEC_AMBEPLUS) && UsbBaoFarmD->Init(CODEC_AMBEPLUS) &&
+         Usb3000emuA->Init(CODEC_AMBE2PLUS) && Usb3000emuB->Init(CODEC_AMBE2PLUS) && Usb3000emuC->Init(CODEC_AMBE2PLUS) && Usb3000emuD->Init(CODEC_AMBE2PLUS) )
     {
         CVocodecChannel *Channel;
         // create all channels
         {
             // ch1
-            Channel = new CVocodecChannel(UsbBaoFarmA, 0, UsbBaoFarmB, 0, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(UsbBaoFarmA, 0, Usb3000emuA, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             UsbBaoFarmA->AddChannel(Channel);
-            UsbBaoFarmB->AddChannel(Channel);
+            Usb3000emuA->AddChannel(Channel);
             // ch2
-            Channel = new CVocodecChannel(UsbBaoFarmB, 0, UsbBaoFarmA, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA, 0, UsbBaoFarmA, 0, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
             UsbBaoFarmA->AddChannel(Channel);
-            UsbBaoFarmB->AddChannel(Channel);
+            Usb3000emuA->AddChannel(Channel);
             // ch3
-            Channel = new CVocodecChannel(UsbBaoFarmC, 0, UsbBaoFarmD, 0, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(UsbBaoFarmB, 0, Usb3000emuB, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
-            UsbBaoFarmC->AddChannel(Channel);
-            UsbBaoFarmD->AddChannel(Channel);
+            UsbBaoFarmB->AddChannel(Channel);
+            Usb3000emuB->AddChannel(Channel);
             // ch4
-            Channel = new CVocodecChannel(UsbBaoFarmD, 0, UsbBaoFarmC, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuB, 0, UsbBaoFarmB, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            UsbBaoFarmB->AddChannel(Channel);
+            Usb3000emuB->AddChannel(Channel);
+            // ch5
+            Channel = new CVocodecChannel(UsbBaoFarmC, 0, Usb3000emuC, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             UsbBaoFarmC->AddChannel(Channel);
+            Usb3000emuC->AddChannel(Channel);
+            // ch6
+            Channel = new CVocodecChannel(Usb3000emuC, 0, UsbBaoFarmC, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            UsbBaoFarmC->AddChannel(Channel);
+            Usb3000emuC->AddChannel(Channel);
+            // ch7
+            Channel = new CVocodecChannel(UsbBaoFarmD, 0, Usb3000emuD, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
             UsbBaoFarmD->AddChannel(Channel);
+            Usb3000emuD->AddChannel(Channel);
+            // ch8
+            Channel = new CVocodecChannel(Usb3000emuD, 0, UsbBaoFarmD, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            UsbBaoFarmD->AddChannel(Channel);
+            Usb3000emuD->AddChannel(Channel);
             //done
-            nStreams = 4;
+            nStreams = 8;
         }
     }
     else
@@ -361,6 +496,10 @@ int CFtdiDeviceDescr::CreateBaoFarm(CFtdiDeviceDescr *descr, std::vector<CVocode
         delete UsbBaoFarmB;
         delete UsbBaoFarmC;
         delete UsbBaoFarmD;
+        delete Usb3000emuA;
+        delete Usb3000emuB;
+        delete Usb3000emuC;
+        delete Usb3000emuD;
     }
     
     // done
@@ -384,40 +523,85 @@ int CFtdiDeviceDescr::CreateUsb3006(CFtdiDeviceDescr *descr, std::vector<CVocode
     CUsb3003Interface *Usb3003B =
         new CUsb3003Interface(descr->GetVid(), descr->GetPid(), descr->GetChannelDescription(1), descr->GetChannelSerialNumber(1));
     
+    CUsb3000emuInterface *Usb3000emuA0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuA1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuA2 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emuB2 = InstantiateUsb3000emu();
+    
     // init the interfaces
-    if ( Usb3003A->Init(CODEC_AMBEPLUS) && Usb3003B->Init(CODEC_AMBE2PLUS) )
+    if ( Usb3003A->Init(CODEC_AMBEPLUS) && Usb3003B->Init(CODEC_AMBEPLUS) &&
+         Usb3000emuA0->Init(CODEC_AMBE2PLUS) && Usb3000emuA1->Init(CODEC_AMBE2PLUS) && Usb3000emuA2->Init(CODEC_AMBE2PLUS) &&
+         Usb3000emuB0->Init(CODEC_AMBE2PLUS) && Usb3000emuB1->Init(CODEC_AMBE2PLUS) && Usb3000emuB2->Init(CODEC_AMBE2PLUS) )
     {
         CVocodecChannel *Channel;
         // create all channels
         {
             // ch1
-            Channel = new CVocodecChannel(Usb3003A, 0, Usb3003A, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003A, 0, Usb3000emuA0, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
+            Usb3000emuA0->AddChannel(Channel);
             // ch2
-            Channel = new CVocodecChannel(Usb3003A, 1, Usb3003A, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA0, 0, Usb3003A, 0, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
+            Usb3000emuA0->AddChannel(Channel);
             // ch3
-            Channel = new CVocodecChannel(Usb3003B, 0, Usb3003B, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003A, 1, Usb3000emuA1, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3003A->AddChannel(Channel);
+            Usb3000emuA1->AddChannel(Channel);
             // ch4
-            Channel = new CVocodecChannel(Usb3003B, 1, Usb3003B, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA1, 0, Usb3003A, 1, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3003A->AddChannel(Channel);
+            Usb3000emuA1->AddChannel(Channel);
             // ch5
-            Channel = new CVocodecChannel(Usb3003A, 2, Usb3003B, 2, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003A, 2, Usb3000emuA2, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
-            Usb3003B->AddChannel(Channel);
+            Usb3000emuA2->AddChannel(Channel);
             // ch6
-            Channel = new CVocodecChannel(Usb3003B, 2, Usb3003A, 2, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emuA2, 0, Usb3003A, 2, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
             Usb3003A->AddChannel(Channel);
+            Usb3000emuA2->AddChannel(Channel);
+
+            // ch7
+            Channel = new CVocodecChannel(Usb3003B, 0, Usb3000emuB0, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
             Usb3003B->AddChannel(Channel);
+            Usb3000emuB0->AddChannel(Channel);
+            // ch8
+            Channel = new CVocodecChannel(Usb3000emuB0, 0, Usb3003B, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB0->AddChannel(Channel);
+            // ch9
+            Channel = new CVocodecChannel(Usb3003B, 1, Usb3000emuB1, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB1->AddChannel(Channel);
+            // ch10
+            Channel = new CVocodecChannel(Usb3000emuB1, 0, Usb3003B, 1, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB1->AddChannel(Channel);
+            // ch11
+            Channel = new CVocodecChannel(Usb3003B, 2, Usb3000emuB2, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB2->AddChannel(Channel);
+            // ch12
+            Channel = new CVocodecChannel(Usb3000emuB2, 0, Usb3003B, 2, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003B->AddChannel(Channel);
+            Usb3000emuB2->AddChannel(Channel);
+
             //done
-            nStreams = 6;
+            nStreams = 12;
         }
     }
     else
@@ -425,6 +609,12 @@ int CFtdiDeviceDescr::CreateUsb3006(CFtdiDeviceDescr *descr, std::vector<CVocode
         // cleanup
         delete Usb3003A;
         delete Usb3003B;
+        delete Usb3000emuA0;
+        delete Usb3000emuA1;
+        delete Usb3000emuA2;
+        delete Usb3000emuB0;
+        delete Usb3000emuB1;
+        delete Usb3000emuB2;
     }
     
     // done
@@ -449,20 +639,89 @@ int CFtdiDeviceDescr::CreateUsb3003(CFtdiDeviceDescr *descr, std::vector<CVocode
     // create the interfaces for the 3003 chip
     CUsb3003Interface *Usb3003 = InstantiateUsb3003(descr);
     
+    CUsb3000emuInterface *Usb3000emu0 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emu1 = InstantiateUsb3000emu();
+    CUsb3000emuInterface *Usb3000emu2 = InstantiateUsb3000emu();
+    
     // init the interface
-    if ( (Usb3003 != NULL) && Usb3003->Init(CODEC_NONE) )
+    if ( (Usb3003 != NULL) && Usb3003->Init(CODEC_AMBEPLUS) &&
+          Usb3000emu0->Init(CODEC_AMBE2PLUS) && Usb3000emu1->Init(CODEC_AMBE2PLUS) && Usb3000emu2->Init(CODEC_AMBE2PLUS) )
     {
         CVocodecChannel *Channel;
         // create all channels
         {
             // ch1
-            Channel = new CVocodecChannel(Usb3003, 0, Usb3003, 1, CODECGAIN_AMBEPLUS);
+            Channel = new CVocodecChannel(Usb3003, 0, Usb3000emu0, 0, CODECGAIN_AMBEPLUS);
             channels->push_back(Channel);
             Usb3003->AddChannel(Channel);
+            Usb3000emu0->AddChannel(Channel);
             // ch2
-            Channel = new CVocodecChannel(Usb3003, 1, Usb3003, 0, CODECGAIN_AMBE2PLUS);
+            Channel = new CVocodecChannel(Usb3000emu0, 0, Usb3003, 0, CODECGAIN_AMBE2PLUS);
             channels->push_back(Channel);
             Usb3003->AddChannel(Channel);
+            Usb3000emu0->AddChannel(Channel);
+            // ch3
+            Channel = new CVocodecChannel(Usb3003, 1, Usb3000emu1, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003->AddChannel(Channel);
+            Usb3000emu1->AddChannel(Channel);
+            // ch4
+            Channel = new CVocodecChannel(Usb3000emu1, 0, Usb3003, 1, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003->AddChannel(Channel);
+            Usb3000emu1->AddChannel(Channel);
+            // ch5
+            Channel = new CVocodecChannel(Usb3003, 2, Usb3000emu2, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3003->AddChannel(Channel);
+            Usb3000emu2->AddChannel(Channel);
+            // ch6
+            Channel = new CVocodecChannel(Usb3000emu2, 0, Usb3003, 2, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3003->AddChannel(Channel);
+            Usb3000emu2->AddChannel(Channel);
+            // done
+            nStreams = 6;
+        }
+    }
+    else
+    {
+        // cleanup
+        delete Usb3003;
+        delete Usb3000emu0;
+        delete Usb3000emu1;
+        delete Usb3000emu2;
+    }
+    
+    // done
+    return nStreams;
+}
+
+int CFtdiDeviceDescr::CreateUsb3000(CFtdiDeviceDescr *descr, std::vector<CVocodecChannel *>*channels)
+{
+    int nStreams = 0;
+    
+    // create the interfaces for the 3000 chip
+    CUsb3000Interface *Usb3000 = InstantiateUsb3000(descr);
+    
+    CUsb3000emuInterface *Usb3000emu = InstantiateUsb3000emu();
+    
+    // init the interface
+    if ( (Usb3000 != NULL) && Usb3000->Init(CODEC_AMBEPLUS) && Usb3000emu->Init(CODEC_AMBE2PLUS) )
+    {
+        CVocodecChannel *Channel;
+        // create all channels
+        {
+            // ch1
+            Channel = new CVocodecChannel(Usb3000, 0, Usb3000emu, 0, CODECGAIN_AMBEPLUS);
+            channels->push_back(Channel);
+            Usb3000->AddChannel(Channel);
+            Usb3000emu->AddChannel(Channel);
+            // ch2
+            Channel = new CVocodecChannel(Usb3000emu, 0, Usb3000, 0, CODECGAIN_AMBE2PLUS);
+            channels->push_back(Channel);
+            Usb3000->AddChannel(Channel);
+            Usb3000emu->AddChannel(Channel);
             // done
             nStreams = 2;
         }
@@ -470,7 +729,8 @@ int CFtdiDeviceDescr::CreateUsb3003(CFtdiDeviceDescr *descr, std::vector<CVocode
     else
     {
         // cleanup
-        delete Usb3003;
+        delete Usb3000;
+        delete Usb3000emu;
     }
     
     // done
@@ -674,4 +934,17 @@ CUsb3000Interface *CFtdiDeviceDescr::InstantiateUsb3000(CFtdiDeviceDescr *descr)
     }
     // done
     return Usb3000;
+}
+
+CUsb3000emuInterface *CFtdiDeviceDescr::InstantiateUsb3000emu(void)
+{
+    static uint8 n = 0;
+
+    n++;
+    char serial[9];
+    ::sprintf(serial, "%08d", n);
+
+    CUsb3000emuInterface *Usb3000emu = new CUsb3000emuInterface(0, n, "MD380EMU", serial);
+
+    return Usb3000emu;
 }

@@ -86,15 +86,17 @@ int main(int argc, const char * argv[])
 #endif
     
     // check arguments
-    if ( argc != 2 )
+    if ( argc != 4 )
     {
-        std::cout << "Usage: ambed ip" << std::endl;
-        std::cout << "example: ambed 192.168.178.212" << std::endl;
+        std::cout << "Usage: ambed ip emuip emuport" << std::endl;
+        std::cout << "example: ambed 192.168.178.212 127.0.0.1 2470" << std::endl;
         return 1;
     }
     
     // initialize ambeserver
     g_AmbeServer.SetListenIp(CIp(argv[1]));
+    g_AmbeServer.SetEmuIp(CIp(argv[2]));
+    g_AmbeServer.SetEmuPort(atoi(argv[3]));
     
     // and let it run
     std::cout << "Starting AMBEd " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_REVISION << std::endl << std::endl;

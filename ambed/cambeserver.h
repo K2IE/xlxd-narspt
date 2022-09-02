@@ -49,9 +49,13 @@ public:
     
     // get
     const CIp &GetListenIp(void) const   { return m_Controller.GetListenIp(); }
+    const CIp &GetEmuIp(void) const      { return m_EmuIp; }
+    uint16 GetEmuPort(void) const        { return m_uiEmuPort; }
     
     // set
     void SetListenIp(const CIp &ip)      { m_Controller.SetListenIp(ip); }
+    void SetEmuIp(const CIp &ip)         { m_EmuIp = ip; }
+    void SetEmuPort(uint16 port)         { m_uiEmuPort = port; }
     
     
     // operator
@@ -65,6 +69,9 @@ protected:
     // threads
     bool            m_bStopThreads;
     std::thread    *m_pThread;
+    
+    CIp             m_EmuIp;
+    uint16          m_uiEmuPort;
     
 public:
 #ifdef DEBUG_DUMPFILE

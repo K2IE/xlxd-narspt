@@ -40,6 +40,7 @@
 // class
 
 class CUsb3000Interface;
+class CUsb3000emuInterface;
 class CUsb3003Interface;
 
 class CFtdiDeviceDescr
@@ -76,12 +77,14 @@ protected:
     static int  CreateUsb3012(CFtdiDeviceDescr *, std::vector<CVocodecChannel *>*);
     static int  CreateUsb3006(CFtdiDeviceDescr *, std::vector<CVocodecChannel *>*);
     static int  CreateUsb3003(CFtdiDeviceDescr *, std::vector<CVocodecChannel *>*);
+    static int  CreateUsb3000(CFtdiDeviceDescr *, std::vector<CVocodecChannel *>*);
     static int  CreateBaoFarm(CFtdiDeviceDescr *, std::vector<CVocodecChannel *>*);
     static int  CreatePair(CUsb3003Interface *, CUsb3003Interface *, std::vector<CVocodecChannel *>*);
     static int  CreatePair(CUsb3003Interface *, CUsb3000Interface *, std::vector<CVocodecChannel *>*);
     static int  CreatePair(CUsb3000Interface *, CUsb3000Interface *, std::vector<CVocodecChannel *>*);
     static CUsb3003Interface *InstantiateUsb3003(CFtdiDeviceDescr *);
     static CUsb3000Interface *InstantiateUsb3000(CFtdiDeviceDescr *);
+    static CUsb3000emuInterface *InstantiateUsb3000emu(void);
   
 protected:
     // status

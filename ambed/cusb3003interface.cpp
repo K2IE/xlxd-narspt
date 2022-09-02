@@ -55,6 +55,8 @@ bool CUsb3003Interface::Init(uint8 uiOddCodec)
     bool ok = true;
     
     // init the odd channel
+    m_uiChCodecs[0] = uiOddCodec; //for use with emu
+    m_uiChCodecs[1] = uiOddCodec; //for use with emu
     m_uiChCodecs[2] = uiOddCodec;
     
     // base class
@@ -90,7 +92,7 @@ CVocodecChannel *CUsb3003Interface::GetChannelWithChannelIn(int iCh)
     bool done = false;
     for ( int i = 0; (i < m_Channels.size()) && !done; i++ )
     {
-        if ( iCh == 2 )
+        //if ( iCh == 2 )
         {
             if ( (m_Channels[i]->GetChannelIn() == iCh) && !(m_Channels[i]->IsInterfaceOut(this)) )
             {
@@ -98,14 +100,14 @@ CVocodecChannel *CUsb3003Interface::GetChannelWithChannelIn(int iCh)
                 done = true;
             }
         }
-        else
+        /*else
         {
             if ( (m_Channels[i]->GetChannelIn() == iCh) && (m_Channels[i]->IsInterfaceOut(this)) )
             {
                 Channel = m_Channels[i];
                 done = true;
             }
-        }
+        }*/
     }
     return Channel;
 }
@@ -137,9 +139,11 @@ bool CUsb3003Interface::IsValidChannelPacket(const CBuffer &buffer, int *ch, CAm
     {
         *ch = buffer.data()[4] - PKT_CHANNEL0;
         if ( *ch == 0 )
-            packet->SetCodec(CODEC_AMBEPLUS);
+            packet->SetCodec(m_uiChCodecs[0]);
         else if ( *ch == 1 )
-            packet->SetCodec(CODEC_AMBE2PLUS);
+            packet->SetCodec(m_uiChCodecs[1]);
+        else if ( *ch == 2 )
+            packet->SetCodec(m_uiChCodecs[2]);
         else
             packet->SetCodec(CODEC_NONE);
         packet->SetAmbe(&(buffer.data()[7]));

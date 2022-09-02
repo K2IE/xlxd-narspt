@@ -114,102 +114,31 @@ bool CVocodecs::Init(void)
         }
     }
     // next handle all single channel devices.
-    // they must be handeled in pair, or in pair with another
-    // even number of channels device.
     std::vector<CVocodecChannel *>  PairsOf3000DevicesChs;
     for ( int i = 0; i < m_FtdiDeviceDescrs.size(); i++ )
     {
-        CFtdiDeviceDescr *descr1 = m_FtdiDeviceDescrs[i];
-        CFtdiDeviceDescr *descr2 = NULL;
-        if ( !descr1->IsUsed() && (descr1->GetNbChannels() == 1) )
+        CFtdiDeviceDescr *descr = m_FtdiDeviceDescrs[i];
+        if ( !descr->IsUsed() && (descr->GetNbChannels() == 1) )
         {
-            // any other single channel device to pair with ?
-            bool found = false;
-            int j = i+1;
-            while ( !found && (j < m_FtdiDeviceDescrs.size()) )
-            {
-                descr2 = m_FtdiDeviceDescrs[j];
-                found = (!descr2->IsUsed() && (descr2->GetNbChannels() == 1));
-                j++;
-            }
-            // found one ?
-            if ( found )
-            {
-                // yes, create and pair both interfaces
-                iNbCh += CFtdiDeviceDescr::CreateInterfacePair(descr1, descr2, &PairsOf3000DevicesChs);
-                // and flag as used
-                descr1->SetUsed(true);
-                descr2->SetUsed(true);
-            }
+            // create the object
+            iNbCh += CFtdiDeviceDescr::CreateInterface(descr, &PairsOf3000DevicesChs);
+            // and flag as used
+            descr->SetUsed(true);
         }
     }
     // now we should have only remaining the 3 channels device(s)
-    // and possibly an unique single channel device
-    std::vector<CVocodecChannel *>  Single3003DeviceChannels;
     for ( int i = 0; i < m_FtdiDeviceDescrs.size(); i++ )
     {
-        CFtdiDeviceDescr *descr1 = m_FtdiDeviceDescrs[i];
-        CFtdiDeviceDescr *descr2 = NULL;
-        if ( !descr1->IsUsed() && (descr1->GetNbChannels() == 3) )
+        CFtdiDeviceDescr *descr = m_FtdiDeviceDescrs[i];
+        if ( !descr->IsUsed() && (descr->GetNbChannels() == 3) )
         {
-            // any other 3 channel device to pair with ?
-            bool found = false;
-            int j = i+1;
-            while ( !found && (j < m_FtdiDeviceDescrs.size()) )
-            {
-                descr2 = m_FtdiDeviceDescrs[j];
-                found = (!descr2->IsUsed() && (descr2->GetNbChannels() == 3));
-                j++;
-            }
-            // found one ?
-            if ( found )
-            {
-                // yes, create and pair both interfaces
-                iNbCh += CFtdiDeviceDescr::CreateInterfacePair(descr1, descr2, &Multi3003DevicesChs);
-                // and flag as used
-                descr1->SetUsed(true);
-                descr2->SetUsed(true);
-            }
+            // create the object
+            iNbCh += CFtdiDeviceDescr::CreateInterface(descr, &Multi3003DevicesChs);
+            // and flag as used
+            descr->SetUsed(true);
         }
     }
-    // at this point we should have only remaining an unique 3 channels
-    // and or a unique single channel
-    std::vector<CVocodecChannel *>  Combined3003And3000DeviceChannels;
-    for ( int i = 0; i < m_FtdiDeviceDescrs.size(); i++ )
-    {
-        CFtdiDeviceDescr *descr1 = m_FtdiDeviceDescrs[i];
-        CFtdiDeviceDescr *descr2 = NULL;
-        // Any 3003  ?
-        if ( !descr1->IsUsed() && (descr1->GetNbChannels() == 3) )
-        {
-            // any single channel device to pair with ?
-            bool found = false;
-            int j = 0;
-            while ( !found && (j < m_FtdiDeviceDescrs.size()) )
-            {
-                descr2 = m_FtdiDeviceDescrs[j];
-                found = ((descr1 != descr2) && !descr2->IsUsed() && (descr2->GetNbChannels() == 1));
-                j++;
-            }
-            // found one ?
-            if ( found )
-            {
-                // yes, create and pair both interfaces
-                iNbCh += CFtdiDeviceDescr::CreateInterfacePair(descr1, descr2, &Combined3003And3000DeviceChannels);
-                // and flag as used
-                descr1->SetUsed(true);
-                descr2->SetUsed(true);
-            }
-            else
-            {
-                // no, just create a standalone 3003 interface
-                iNbCh += CFtdiDeviceDescr::CreateInterface(descr1, &Single3003DeviceChannels);
-                // and flag as used
-                descr1->SetUsed(true);
-            }
-        }
-    }
-    // at this point we should possible only have unique 3003 remaining
+
 
     // now agregate channels by order of priority
     // for proper load sharing
@@ -221,22 +150,14 @@ bool CVocodecs::Init(void)
         }
         PairsOf3000DevicesChs.clear();
     }
-    // next the left-over single 3003 device
-    {
-        for ( int i = 0;  i < Single3003DeviceChannels.size(); i++ )
-        {
-            m_Channels.push_back(Single3003DeviceChannels.at(i));
-        }
-        Single3003DeviceChannels.clear();
-    }
     // next BaoFarm devices
     {
-        int n = (int)MultiBAOFarmDevicesChs.size() / 4;
-        for ( int i = 0; (i < 4) && (n != 0); i++ )
+        int n = (int)MultiBAOFarmDevicesChs.size() / 8;
+        for ( int i = 0; (i < 8) && (n != 0); i++ )
         {
             for ( int j = 0; j < n; j++ )
             {
-                m_Channels.push_back(MultiBAOFarmDevicesChs.at((j*4) + i));
+                m_Channels.push_back(MultiBAOFarmDevicesChs.at((j*8) + i));
             }
         }
         MultiBAOFarmDevicesChs.clear();
@@ -253,14 +174,6 @@ bool CVocodecs::Init(void)
             }
         }
         Multi3003DevicesChs.clear();
-    }
-    // and finaly the hybrid combination of 3003 / 3000
-    {
-        for ( int i = 0;  i < Combined3003And3000DeviceChannels.size(); i++ )
-        {
-            m_Channels.push_back(Combined3003And3000DeviceChannels.at(i));
-        }
-        Combined3003And3000DeviceChannels.clear();
     }
 
     

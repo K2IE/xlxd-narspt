@@ -105,15 +105,15 @@ protected:
     bool DisableParity(void);
     virtual bool ConfigureDevice(void)                      { return false; }
     bool ConfigureChannel(uint8, const uint8 *, int, int);
-    bool CheckIfDeviceNeedsReOpen(void);
+    virtual bool CheckIfDeviceNeedsReOpen(void);
     virtual int GetDeviceFifoSize(void) const              { return 1; }
     
     // io level
-    bool ReadBuffer(CBuffer *);
+    virtual bool ReadBuffer(CBuffer *);
     bool WriteBuffer(const CBuffer &);
-    int  FTDI_read_packet(FT_HANDLE, char *, int);
+    virtual int  FTDI_read_packet(FT_HANDLE, char *, int);
     bool FTDI_read_bytes(FT_HANDLE, char *, int);
-    bool FTDI_write_packet(FT_HANDLE, const char *, int);
+    virtual bool FTDI_write_packet(FT_HANDLE, const char *, int);
     
     // error reporting
     void FTDI_Error(char *, FT_STATUS);
